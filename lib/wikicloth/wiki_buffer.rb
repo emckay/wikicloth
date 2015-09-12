@@ -1,3 +1,11 @@
+$bm = {
+  prev_char: 0,
+  skip_html: 0,
+  run_globals: 0,
+  check_new_tag: 0,
+  switch: 0
+}
+
 module WikiCloth
 class WikiBuffer
 
@@ -69,7 +77,8 @@ class WikiBuffer
 
   def check_globals()
     return false if self.class != WikiBuffer
-
+ 
+    start = Time.now
     if previous_char == "\n" || previous_char == ""
       if @indent == @buffers[-1].object_id && current_char != " "
         @indent = nil
@@ -86,16 +95,29 @@ class WikiBuffer
         return true
       end
     end
+    $bm[:prev_char] += Time.now - start
 
-    if @buffers[-1].run_globals?
+    start = Time.now
+    run_globals = @buffers[-1].run_globals?
+    $bm[:run_globals] += Time.now - start
+    if run_globals
       # new html tag
-      if @check_new_tag == true && current_char =~ /([a-z])/ && !@buffers[-1].skip_html?
+      
+      start = Time.now
+      skip_html = @buffers[-1].skip_html?
+      $bm[:skip_html] += Time.now - start
+
+      start = Time.now
+      if @check_new_tag == true && current_char =~ /([a-z])/ && !skip_html
         @buffers[-1].data.chop!
         parent = @buffers[-1].element_name if @buffers[-1].class == WikiBuffer::HTMLElement
         @buffers << WikiBuffer::HTMLElement.new("",@options,parent)
       end
       @check_new_tag = current_char == '<' ? true : false
+      $bm[:check_new_tag] += Time.now - start
+      
 
+      start = Time.now
       # global
       case
       # start variable
@@ -120,8 +142,14 @@ class WikiBuffer
         return true
 
       end
+      $bm[:switch] += Time.now - start
     end
 
+    
+    $bm.each do |k,v|
+      puts "Set globals benchmark"
+      puts "#{k}: #{v}"
+    end
     return false
   end
 
