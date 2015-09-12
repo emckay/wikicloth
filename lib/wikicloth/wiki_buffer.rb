@@ -7,7 +7,10 @@ $bm = {
   check_globals: 0,
   add_char_check_globals: 0,
   new_char: 0,
-  add_char_false: 0
+  add_char_false: 0,
+  space_char: 0,
+  indent: 0,
+  class_check: 0
 }
 
 module WikiCloth
@@ -81,22 +84,31 @@ class WikiBuffer
 
   def check_globals()
     total_start = Time.now
-    return false if self.class != WikiBuffer
+
+    start = Time.now
+    class_check = self.class != WikiBuffer
+    $bm[:class_check] += Time.now - start
+    return false if class_check
  
     start = Time.now
     if previous_char == "\n" || previous_char == ""
       if @indent == @buffers[-1].object_id && current_char != " "
+        start = Time.now
         @indent = nil
         # close pre tag
         cc_temp = current_char
         "</pre>\n".each_char { |c| self.add_char(c) }
         # get the parser back on the right track
         "\n#{cc_temp}".each_char { |c| @buffers[-1].add_char(c) }
+        $bm[:indent] += Time.now - start
         return true
       end
+
       if current_char == " " && @indent.nil? && ![WikiBuffer::HTMLElement,WikiBuffer::Var].include?(@buffers[-1].class)
+        start = Time.now
         "\n<pre> ".each_char { |c| @buffers[-1].add_char(c) }
         @indent = @buffers[-1].object_id
+        $bm[:space_char] = Time.now - start
         return true
       end
     end
