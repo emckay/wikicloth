@@ -10,7 +10,10 @@ $bm = {
   add_char_false: 0,
   space_char: 0,
   indent: 0,
-  class_check: 0
+  class_check: 0,
+  open_brace: 0,
+  square_bracket: 0,
+  table: 0
 }
 
 module WikiCloth
@@ -139,23 +142,29 @@ class WikiBuffer
       case
       # start variable
       when previous_char == '{' && current_char == '{'
+        start = Time.now
         if @buffers[-1].instance_of?(WikiBuffer::Var) && @buffers[-1].tag_start == true
           @buffers[-1].tag_size += 1
         else
           @buffers[-1].data.chop! if @buffers[-1].data[-1,1] == '{'
           @buffers << WikiBuffer::Var.new("",@options)
         end
+        $bm[:open_brace] += Time.now - start
         return true
 
       # start link
       when current_char == '[' && previous_char != '[' && !@buffers[-1].skip_links?
+        start = Time.now
         @buffers << WikiBuffer::Link.new("",@options)
+        $bm[:square_bracket] += Time.now - start
         return true
 
       # start table
       when previous_char == '{' && current_char == "|"
+        start = Time.now
         @buffers[-1].data.chop!
         @buffers << WikiBuffer::Table.new("",@options)
+        $bm[:table] += Time.now - start
         return true
 
       end
