@@ -91,6 +91,7 @@ class WikiBuffer
     start = Time.now
     class_check = self.class != WikiBuffer
     $bm[:class_check] += Time.now - start
+    $bm[:check_globals] += Time.now - total_start
     return false if class_check
  
     start = Time.now
@@ -104,6 +105,8 @@ class WikiBuffer
         # get the parser back on the right track
         "\n#{cc_temp}".each_char { |c| @buffers[-1].add_char(c) }
         $bm[:indent] += Time.now - start
+        $bm[:prev_char] += Time.now - start
+        $bm[:check_globals] += Time.now - total_start
         return true
       end
 
@@ -112,6 +115,8 @@ class WikiBuffer
         "\n<pre> ".each_char { |c| @buffers[-1].add_char(c) }
         @indent = @buffers[-1].object_id
         $bm[:space_char] = Time.now - start
+        $bm[:prev_char] = Time.now - start
+        $bm[:check_globals] += Time.now - total_start
         return true
       end
     end
@@ -150,6 +155,7 @@ class WikiBuffer
           @buffers << WikiBuffer::Var.new("",@options)
         end
         $bm[:open_brace] += Time.now - start
+        $bm[:check_globals] += Time.now - total_start
         return true
 
       # start link
@@ -157,6 +163,7 @@ class WikiBuffer
         start = Time.now
         @buffers << WikiBuffer::Link.new("",@options)
         $bm[:square_bracket] += Time.now - start
+        $bm[:check_globals] += Time.now - total_start
         return true
 
       # start table
@@ -165,6 +172,7 @@ class WikiBuffer
         @buffers[-1].data.chop!
         @buffers << WikiBuffer::Table.new("",@options)
         $bm[:table] += Time.now - start
+        $bm[:check_globals] += Time.now - total_start
         return true
 
       end
