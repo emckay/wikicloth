@@ -145,11 +145,11 @@ class WikiBuffer
       $bm[:switch] += Time.now - start
     end
 
-    
+    puts "Check globals benchmark"
     $bm.each do |k,v|
-      puts "Set globals benchmark"
-      puts "#{k}: #{v}"
+      puts "  #{k}: #{v}"
     end
+    puts '----'
     return false
   end
 
