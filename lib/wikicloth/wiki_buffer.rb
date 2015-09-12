@@ -3,7 +3,11 @@ $bm = {
   skip_html: 0,
   run_globals: 0,
   check_new_tag: 0,
-  switch: 0
+  switch: 0,
+  check_globals: 0,
+  add_char_check_globals: 0,
+  new_char: 0,
+  add_char_false: 0
 }
 
 module WikiCloth
@@ -76,6 +80,7 @@ class WikiBuffer
   end
 
   def check_globals()
+    total_start = Time.now
     return false if self.class != WikiBuffer
  
     start = Time.now
@@ -144,7 +149,8 @@ class WikiBuffer
       end
       $bm[:switch] += Time.now - start
     end
-
+    
+    $bm[:check_globals] += Time.now - total_start
     puts "Check globals benchmark"
     $bm.each do |k,v|
       puts "  #{k}: #{v}"
@@ -177,20 +183,29 @@ class WikiBuffer
   end
 
   def add_char(c)
+    total_start = Time.now
     self.previous_char = self.current_char
     self.current_char = c
-
-    if self.check_globals() == false
+    
+    start = Time.now
+    check_g = self.check_globals()
+    $bm[:add_char_check_globals] += Time.now - start
+    if check_g == false
       case
       when @buffers.size == 1
-        return self.new_char()
+        start = Time.now
+        ret = self.new_char()
+        $bm[:new_char] = Time.now - start
+        return ret
       when @buffers[-1].add_char(c) == false && self.class == WikiBuffer
+        start = Time.now
         tmp = @buffers.pop
         @buffers[-1].data += tmp.send("to_#{@options[:output]}")
         # any data left in the buffer we feed into the parent
         unless tmp.data.nil?
           tmp.data.each_char { |x| self.add_char(x) }
         end
+        $bm[:add_char_false] = Time.now - start 
       end
     end
   end
